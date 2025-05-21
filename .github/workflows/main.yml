@@ -9,28 +9,30 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chrome, firefox, edge]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Cypress tests on ${{ matrix.browser }}
-        uses: cypress-io/github-action@v6
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
-          browser: ${{ matrix.browser }}
-          command: npx cypress run --browser ${{ matrix.browser }} --reporter options reportDir=cypress/reports/${{ matrix.browser }}
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Cypress tests on ${{ matrix.browser }}
+        run: npx cypress run --browser ${{ matrix.browser }} --reporter mochawesome --reporter-options reportDir=cypress/reports/${{ matrix.browser }}
 
       - name: Merge Mochawesome Reports
         run: npx mochawesome-merge cypress/reports/${{ matrix.browser }}/*.json > cypress/reports/${{ matrix.browser }}/merged-reports.json
-      
-      - name: Generate HTML reports
-        run: npx marge cypress/reports/${{ matrix.browser }}/merged-reports.json --reportDir cypress/reports/${{ matrix.browser }} -f "${{ matrix.browser }}--report.html"
 
-      - name: upload html Reports
+      - name: Generate HTML reports
+        run: npx marge cypress/reports/${{ matrix.browser }}/merged-reports.json --reportDir cypress/reports/${{ matrix.browser }} --reportFilename "${{ matrix.browser }}--report.html"
+
+      - name: Upload HTML Reports
         uses: actions/upload-artifact@v4
         with:
-            name: Cypress HTML Report ${{ matrix.browser }}
-            path: cypress/reports/${{ matrix.browser }}
-
-
-
-
+          name: Cypress HTML Report - ${{ matrix.browser }}
+          path: cypress/reports/${{ matrix.browser }}
